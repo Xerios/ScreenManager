@@ -1,7 +1,7 @@
 # ScreenManager
 Flexible way to manage screens with transitions, layers and proper input handling for Unity.
 
-Fully documented, except for this readme though...
+Including examples and fully documented, except for this readme though...
 
 ## Screenshots
 
@@ -16,7 +16,8 @@ We'll look into ScreenManager settings later on. For now we need to create our s
 
 Under ScreenManager create all your screens.
 
-Note that all screens are required to have a BaseScreen compatible class ( ex: AnimatorScreen, Popup, SimpleTweenScreen, TweenedScreen )
+Note that all screens are required to have a BaseScreen compatible class 
+_( ex: AnimatorScreen, Popup, SimpleTweenScreen, TweenedScreen )_
 
 To start with we can add SimpleTweenScreen, once added you'll notice few things :
 
@@ -41,7 +42,10 @@ Once we added **SimpleTweenScreen** to all our screens, we can define our defaul
 
 Go to **ScreenManager** _( You can use ther shortcut Ctrl+Alt+T or Window/Select ScreenManager in the menu )_
 
-Select your Screen in the Screens section and then once selected you'll see a button named "Set Default" will appear. Click on that. 
+Select your Screen in the Screens section and then once selected you'll see a button named "Set Default" will appear. 
+
+Click on that. 
+
 ![ScreenManager](/img/step0.png?raw=true "ScreenManager")
 
 Now that's done we can pass to setting up our buttons.
