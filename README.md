@@ -65,7 +65,7 @@ There's two ways to setup the buttons :
 ![Button](/img/step1.png?raw=true "Button")
 ![Button](/img/step2.png?raw=true "Button")
 
-( Documentation to be finished )
+( Tutorial to be finished )
 
 ## Contribution
 There's always more to add, so if you want to help then feel free to contribute !
