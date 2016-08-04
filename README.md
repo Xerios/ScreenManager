@@ -11,7 +11,7 @@ Flexible way to manage your UI with transitions, layers and proper input handlin
 * Always-on select for gamepad/keyboard aware navigation
 * Mobile tested
 * Lots of other stuff
-Including examples and fully documented, except for this readme though...
+* Including examples and fully documented, except for this readme.md though...
 
 ## Screenshots
 
