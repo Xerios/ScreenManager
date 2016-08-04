@@ -1,6 +1,16 @@
 # ScreenManager
-Flexible way to manage screens with transitions, layers and proper input handling for Unity.
+Flexible way to manage your UI with transitions, layers and proper input handling for Unity.
 
+## Features
+* Optimized clean and bloatfree code, no additional libraries required
+* Customizable screens ( use tweening, AnimationController or make your own type of screens )
+* Multi-layered stack based navigation
+ * re-usable screens, duplicate screens (popups) 
+* Uses default input handling using Unity's UI events ( including cancel/back event )
+* Buttons navigation setup that doesn't bleed out to other screens 
+* Always-on select for gamepad/keyboard aware navigation
+* Mobile tested
+* Lots of other stuff
 Including examples and fully documented, except for this readme though...
 
 ## Screenshots
@@ -56,3 +66,6 @@ There's two ways to setup the buttons :
 ![Button](/img/step2.png?raw=true "Button")
 
 ( Documentation to be finished )
+
+## Contribution
+There's always more to add, so if you want to help then feel free to contribute !
