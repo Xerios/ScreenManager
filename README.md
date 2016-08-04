@@ -1,5 +1,5 @@
 # ScreenManager
-Flexible way to manage your UI with transitions, layers and proper input handling for Unity.
+Flexible way to manage your UI with transitions, layers and proper navigation handling for Unity.
 
 ## Features
 * Optimized clean and bloatfree code, no additional libraries required
