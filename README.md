@@ -21,6 +21,13 @@ Flexible way to manage your UI with transitions, layers and proper navigation ha
 
 ![Screenshot](/img/spread.png?raw=true "Screenshot")
 
+# Sample code
+````
+screenmgr.Show("MainMenu");
+screenmgr.ShowPopup<Popup>("Alertbox").Message = "Custom Alert Text";
+screenmgr.HideAll();
+````
+
 ## How to use ?
 Simply create a new ScreenManager on any canvas element. 
 (Preferably right underneath the main canvas element.)
