@@ -5,6 +5,7 @@ Flexible way to manage your UI with transitions, layers and proper navigation ha
 * ScreenEditor inspector, but the whole system can be used fully through code
 * Optimized clean and bloatfree code, no additional libraries required
 * Button-mashing-proof, screens respect their order and animate in/out properly
+* **Spread** feature: See all your screens in a grid view for an easier overview and editing
 * Customizable generic screen class
   * Including pre-made presets: Animate, Tween, AnimationController
   * Easily create your own type of screen using the BaseScreen class
