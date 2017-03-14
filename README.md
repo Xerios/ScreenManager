@@ -18,6 +18,8 @@ Flexible way to manage your UI with transitions, layers and proper navigation ha
 
 ![Gif](/img/animated.gif?raw=true "Gif")
 
+_( Note: The inspector window is not forcefully updated, which is why it lags a bit behind )_
+
 ## Screenshots
 
 ![Screenshot](/img/extension.png?raw=true "Screenshot")
