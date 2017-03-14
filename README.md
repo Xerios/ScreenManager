@@ -2,17 +2,21 @@
 Flexible way to manage your UI with transitions, layers and proper navigation handling for Unity.
 
 ## Features
-* Optional ScreenEditor, the whole system can be used fully through code
+* ScreenEditor inspector, but the whole system can be used fully through code
 * Optimized clean and bloatfree code, no additional libraries required
-* Customizable screens and their transitions _( Animate, Tween, AnimationController or make your own type of screens )_
+* Button-mashing-proof, screens respect their order and animate in/out properly
+* Customizable generic screen class
+  * Including pre-made presets: Animate, Tween, AnimationController
+  * Easily create your own type of screen using the BaseScreen class
 * Multi-layered stack based navigation _( alertbox > popup > main )_
- * Re-usable screen instances
- * Duplication of screens _( popups, alerts )_
+  * Re-usable screen instances
+  * Duplication of screens _( popups, alerts )_
 * Uses default input handling using Unity's UI events _( including cancel/back event )_
-* Buttons navigation generation using Unity's native UI navigation system ( prevents navigation from bleeding out to other screens )
-* Option to have an always-on selected button for gamepad/keyboard aware navigation
+* **Buttons navigation generation** using Unity's internal UI navigation system while preventing from navigation bleeding out to other screens
+* Always-on selected button for gamepad and keyboard-aware navigation
 * Mobile tested
-* Including examples and fully documented code
+* Includes an example
+* Fully documented code
 
 ## Gif
 
@@ -23,8 +27,8 @@ _( Note: The inspector window is not forcefully updated, which is why it lags a 
 ## Screenshots
 
 ![Screenshot](/img/extension.png?raw=true "Screenshot")
+![Screenshot](/img/animatorscreen.png?raw=true "Screenshot")
 ![Screenshot](/img/screen.png?raw=true "Screenshot")
-
 ![Screenshot](/img/spread.png?raw=true "Screenshot")
 
 # Sample code
