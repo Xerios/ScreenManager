@@ -66,6 +66,7 @@ namespace ScreenMgr {
         private bool screenQueueDirty = false;
         private BaseScreen screenToKill = null;
         private BaseScreen screenToKeepOnTop = null;
+        private BaseScreen screenToShowInTheEnd = null;
 
         private void Awake() {
             Initialize();
@@ -106,7 +107,7 @@ namespace ScreenMgr {
                         Debug("KILL: " + screenToKill);
                         if (onScreenHide != null) onScreenHide.Invoke(Current);
 
-                        screenQueue.Remove(screenToKill);
+                        if (screenQueue.Contains(screenToKill)) screenQueue.Remove(screenToKill);
 
                         EventSystem.current.SetSelectedGameObject(null);
                         screenToKill.selectedObject = null;
@@ -114,13 +115,18 @@ namespace ScreenMgr {
                         if (screenToKill.keepOnTopWhenHiding) screenToKeepOnTop = screenToKill;
                         screenToKill = null;
                         Current = null;
+                        
+                        if (screenToShowInTheEnd != null) {
+                            screenQueue.Add(screenToShowInTheEnd);
+                            screenToShowInTheEnd = null;
+                        }
                     }
 
                     BaseScreen maxPriorityScreen = screenQueue.LastOrDefault();
 
                     // Is highest-score screen different from current shown one? Then show highest-score screen and hide current
                     if (Current != maxPriorityScreen) {
-                        Debug("Different --> " + Current + " != " + maxPriorityScreen);
+                        Debug("Different? " + Current + " != " + maxPriorityScreen);
 
                         BaseScreen previousScreen = Current;
 
@@ -217,6 +223,24 @@ namespace ScreenMgr {
             if (defaultScreen != null) ShowScreen(defaultScreen, force);
         }
 
+        /// <summary>
+        /// Hides all screens ( clearing the stack ) and shows specified screen
+        /// </summary>
+        public void HideAllAndShow(string screenName) {
+            if (!screensList.ContainsKey(screenName)) {
+                throw new KeyNotFoundException("ScreenManager: HideAllAndShow failed. Screen with name '" + screenName + "' does not exist.");
+            }
+            HideAll();
+            screenToShowInTheEnd = screensList[screenName];
+        }
+
+        /// <summary>
+        /// Hides all screens ( clearing the stack ) and shows specified screen
+        /// </summary>
+        public void HideAllAndShow(BaseScreen screen) {
+            HideAll();
+            screenToShowInTheEnd = screen;
+        }
 
         /// <summary>
         /// Shows specified screen (with no return)
@@ -295,6 +319,7 @@ namespace ScreenMgr {
                 item.selectedObject = null;
                 item.OnDeactivated(true, true);
             }
+            screenQueue.Clear();
 
             screenToKill = Current;
             screenQueueDirty = true;
@@ -328,7 +353,7 @@ namespace ScreenMgr {
 
         [System.Diagnostics.Conditional("DEBUG_ScreenManager")]
         private void Debug(string str) {
-            UnityEngine.Debug.Log("ScreenManager: "+ str, this);
+            UnityEngine.Debug.Log("ScreenManager: <b>" + str + "</b>", this);
         }
     }
 

@@ -14,6 +14,10 @@ Flexible way to manage your UI with transitions, layers and proper navigation ha
 * Mobile tested
 * Including examples and fully documented code
 
+## Gif
+
+![Gif](/img/animated.gif?raw=true "Gif")
+
 ## Screenshots
 
 ![Screenshot](/img/extension.png?raw=true "Screenshot")

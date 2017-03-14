@@ -306,7 +306,7 @@ namespace ScreenMgr {
 
         [System.Diagnostics.Conditional("DEBUG_ScreenManager")]
         private void Debug(string str) {
-            UnityEngine.Debug.Log("BaseScreen: " + str, this);
+            UnityEngine.Debug.Log("BaseScreen: <b>" + str + "</b>", this);
         }
     }
 
