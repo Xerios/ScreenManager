@@ -241,13 +241,18 @@ namespace ScreenMgr
                     screen.gameObject.SetActive(true);
                     RectTransform rectT = screen.GetComponent<RectTransform>();
                     if (rectT != null) {
+                        screenCountX += (rectTScreenMgr.rect.xMin - rectT.rect.xMin);
+                        screenCountY += (rectTScreenMgr.rect.yMin - rectT.rect.yMin);
+
                         rectT.anchoredPosition = new Vector2(screenCountX, screenCountY);
 
-                        screenCountX += rectTScreenMgr.rect.width;
+                        screenCountY -= (rectTScreenMgr.rect.yMax - rectT.rect.yMax);
+                        
+                        screenCountX += rectTScreenMgr.rect.width - (rectTScreenMgr.rect.xMax - rectT.rect.xMax);
 
                         if (i != 0 && (i % 4) == 0) {
                             screenCountX = 0;
-                            screenCountY += rectTScreenMgr.rect.height;
+                            screenCountY += rectT.rect.height;
                         }
                     }
                 }
