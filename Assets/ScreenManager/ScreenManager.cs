@@ -77,7 +77,7 @@ namespace ScreenMgr {
         /// Initializes the class and fills the screen list with children ( executed automatically on Awake() )
         /// </summary>
         private void Initialize() {
-            ServiceLocator.Register<ScreenManager>(this);
+            ServiceLocator.Register<ScreenManager>(this, true);
             
             screenQueue = new List<BaseScreen>(50);
 
