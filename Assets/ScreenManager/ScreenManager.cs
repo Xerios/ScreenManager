@@ -98,7 +98,7 @@ namespace ScreenMgr {
 
 
         IEnumerator CoroutineUpdate() {
-            var waitTime = new WaitForSeconds(0.1f);
+            var waitTime = new WaitForSecondsRealtime(0.1f);
 
             while (true) {
                 if (screenQueueDirty) {
