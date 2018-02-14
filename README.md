@@ -2,21 +2,25 @@
 Flexible way to manage your UI with transitions, layers and proper navigation handling for Unity.
 
 ## Features
-* ScreenEditor inspector, but the whole system can be used fully through code
-* Optimized clean and bloatfree code, no additional libraries required
-* Button-mashing-proof, screens respect their order and animate in/out properly
-* **Spread** feature: See all your screens in a grid view for an easier overview and editing
-* Customizable generic screen class
-  * Including pre-made presets: Animate, Tween, AnimationController
-  * Easily create your own type of screen using the BaseScreen class
+* ScreenEditor inspector
+* but the whole system can be used fully through code
 * Multi-layered stack based navigation _( alertbox > popup > main )_
   * Re-usable screen instances
   * Duplication of screens _( popups, alerts )_
-* Uses default input handling using Unity's UI events _( including cancel/back event )_
-* **Buttons navigation generation** using Unity's internal UI navigation system while preventing from navigation bleeding out to other screens
+* Optimized clean and bloatfree code, no additional libraries required
+* Button-mashing-proof, screens respect their order and animate in/out properly
+* Default input handling using Unity's UI events _( including cancel/back event )_
 * Always-on selected button for gamepad and keyboard-aware navigation
+* **Spread** feature: See all your screens in a grid view for an easier overview and editing
+* **Buttons navigation generation**
+  * Optional focused default button
+  * Cancel/back button which is selected when Cancel key is pressed
+  * Isolate navigation to the current screen
+* **Extendable generic BaseScreen class**
+  * Including pre-made presets: Animate, Tween, AnimationController
+  * Easily create your own type of screen using the BaseScreen class
 * Mobile tested
-* Includes an example
+* Includes three examples
 * Fully documented code
 
 ## Gif
@@ -38,6 +42,8 @@ screenmgr.Show("MainMenu");
 screenmgr.ShowPopup<Popup>("Alertbox").Message = "Custom Alert Text";
 screenmgr.HideAll();
 ````
+## Info
+
 
 ## How to use ?
 Simply create a new ScreenManager on any canvas element. 
