@@ -107,7 +107,8 @@ namespace ScreenMgr {
                         Debug("KILL: " + screenToKill);
                         if (onScreenHide != null) onScreenHide.Invoke(Current);
 
-                        if (screenQueue.Contains(screenToKill)) screenQueue.Remove(screenToKill);
+                        int screenToKillIndex = screenQueue.FindLastIndex(x => x == screenToKill);
+                        if (screenToKillIndex!=-1) screenQueue.RemoveAt(screenToKillIndex);
 
                         EventSystem.current.SetSelectedGameObject(null);
                         screenToKill.selectedObject = null;
@@ -153,10 +154,6 @@ namespace ScreenMgr {
 
                             if (previousScreen != null) {
                                 previousScreen.OnDeactivated(Current.hideCurrent);
-                            } else if (Current.hideCurrent && screenQueue.Count > 1) {
-                                for (int i = screenQueue.Count - 2; i >= 0; i--) {
-                                    screenQueue[i].OnDeactivated(true);
-                                }
                             }
 
                             if (screenToKeepOnTop != null && screenToKeepOnTop.isActiveAndEnabled) {
