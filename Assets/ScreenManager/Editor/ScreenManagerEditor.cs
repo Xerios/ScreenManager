@@ -29,11 +29,11 @@ namespace ScreenMgr
             Selection.activeTransform = GameObject.FindObjectOfType<ScreenManager>().transform;
         }
 
-        public void OnPlayModeEnter() {
+        public void OnPlayModeEnter(PlayModeStateChange state) {
             ScreenManager screenMgr = (target as ScreenManager);
             spreadMode = false;
             SpreadMode(false, screenMgr);
-            EditorApplication.playmodeStateChanged -= OnPlayModeEnter;
+            EditorApplication.playModeStateChanged -= OnPlayModeEnter;
             this.Repaint();
         }
 
@@ -59,7 +59,9 @@ namespace ScreenMgr
                 if (newToggle != spreadMode) {
                     spreadMode = newToggle;
                     SpreadMode(spreadMode, screenMgr);
-                    if (spreadMode) EditorApplication.playmodeStateChanged += OnPlayModeEnter;
+                    if (spreadMode) {
+                        EditorApplication.playModeStateChanged += OnPlayModeEnter;
+                    }
                 }
                 GUILayout.Space(10);
             }
