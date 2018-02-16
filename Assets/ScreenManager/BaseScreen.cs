@@ -263,6 +263,8 @@ namespace ScreenMgr {
         /// </summary>
         /// <param name="go">GameObject to select</param>
         private void SetSelected(GameObject go) {
+            if (screenManager.touchMode) return;
+            
             //Select the GameObject.
             EventSystem.current.SetSelectedGameObject(go);
 
@@ -283,7 +285,7 @@ namespace ScreenMgr {
         public void SelectOrInvokeButton(GameObject go, BaseEventData e) {
             //Debug.Log("SELECT OR USE " + go, go);
             if (!screenManager.instantCancelButton && EventSystem.current.currentSelectedGameObject != go) {
-                EventSystem.current.SetSelectedGameObject(go);
+                if (!screenManager.touchMode) EventSystem.current.SetSelectedGameObject(go);
             } else {
                 go.GetComponent<ISubmitHandler>().OnSubmit(e);
             }

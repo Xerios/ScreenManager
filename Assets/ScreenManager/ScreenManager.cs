@@ -33,6 +33,11 @@ namespace ScreenMgr {
         public bool alwaysOnSelection = false;
 
         /// <summary>
+        /// Useful for touch only menus ( removes default selection and overrides and disables alwaysOnSelection )
+        /// </summary>
+        public bool touchMode = false;
+
+        /// <summary>
         /// Instead of selecting cancel button, execute it directly
         /// </summary>
         public bool instantCancelButton = false;
@@ -166,8 +171,8 @@ namespace ScreenMgr {
                     screenQueueDirty = false;
                 }
 
-                // Make sure we're always selecting something when always-on is enabled
-                if (alwaysOnSelection) {
+                if (!touchMode && alwaysOnSelection) {
+                    // Make sure we're always selecting something when always-on is enabled
                     if (Current != null && !Current.Transition) {
                         GameObject selectedGameObject = EventSystem.current.currentSelectedGameObject;
                         bool isCurrentActive = (selectedGameObject != null && selectedGameObject.activeInHierarchy);

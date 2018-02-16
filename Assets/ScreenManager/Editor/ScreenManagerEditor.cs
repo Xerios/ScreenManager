@@ -68,8 +68,11 @@ namespace ScreenMgr
 
             showScreenManagerSettings = EditorGUILayout.Foldout(showScreenManagerSettings, "Main Settings");
             if (showScreenManagerSettings) {
-                screenMgr.alwaysOnSelection = GUILayout.Toggle(screenMgr.alwaysOnSelection, "Always-on Selection");
-                screenMgr.instantCancelButton = GUILayout.Toggle(screenMgr.instantCancelButton, "Instant Cancel Button");
+                screenMgr.touchMode = GUILayout.Toggle(screenMgr.touchMode, "Touch Mode ( disable auto-selection )");
+                if (!screenMgr.touchMode){
+                    screenMgr.alwaysOnSelection = GUILayout.Toggle(screenMgr.alwaysOnSelection, "Always-on Selection");
+                    screenMgr.instantCancelButton = GUILayout.Toggle(screenMgr.instantCancelButton, "Instant Cancel Button");
+                }
                 GUILayout.Space(10);
             }
 
