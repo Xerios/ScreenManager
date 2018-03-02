@@ -45,6 +45,7 @@ namespace ScreenMgr {
         /// <summary>
         /// Current active screen ( returns null when empty )
         /// </summary>
+        [NonSerialized]
         public BaseScreen Current = null;
 
         /// <summary>
@@ -76,7 +77,13 @@ namespace ScreenMgr {
         private void Awake() {
             Initialize();
         }
-
+        public void OnEnable(){
+            StopAllCoroutines();
+            StartCoroutine(CoroutineUpdate());
+        }
+        public void OnDisable(){
+            StopAllCoroutines();
+        }
 
         /// <summary>
         /// Initializes the class and fills the screen list with children ( executed automatically on Awake() )
