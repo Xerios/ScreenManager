@@ -131,6 +131,7 @@ namespace ScreenMgr {
                     }
                     
                     if (screenQueue.Count==0 && screenToShowInTheEnd != null) {
+                        Debug("ScreenToShowInTheEnd = " + screenToShowInTheEnd);
                         screenQueue.Add(screenToShowInTheEnd);
                         screenToShowInTheEnd = null;
                     }
@@ -148,13 +149,14 @@ namespace ScreenMgr {
                             EventSystem.current.SetSelectedGameObject(null);
                         }
 
-                        if (maxPriorityScreen.Transition) { // Wait for transition
-                            Debug("Transition is busy?");
+                        if (maxPriorityScreen.IsTransitioning) { // Wait for transition
+                            Debug("Transition is busy? " + maxPriorityScreen);
                             Current = null;
                             screenQueueDirty = true;
                             yield return waitTime;
                             continue;
                         } else {
+                            Debug("Transition is over! " + maxPriorityScreen);
                             Current = maxPriorityScreen;
 
                             if (Current == null && defaultScreen != null) Current = defaultScreen;
@@ -180,7 +182,7 @@ namespace ScreenMgr {
 
                 if (!touchMode && alwaysOnSelection) {
                     // Make sure we're always selecting something when always-on is enabled
-                    if (Current != null && !Current.Transition) {
+                    if (Current != null && !Current.IsTransitioning) {
                         GameObject selectedGameObject = EventSystem.current.currentSelectedGameObject;
                         bool isCurrentActive = (selectedGameObject != null && selectedGameObject.activeInHierarchy);
 
@@ -239,8 +241,7 @@ namespace ScreenMgr {
             if (!screensList.ContainsKey(screenName)) {
                 throw new KeyNotFoundException("ScreenManager: HideAllAndShow failed. Screen with name '" + screenName + "' does not exist.");
             }
-            HideAll();
-            screenToShowInTheEnd = screensList[screenName];
+            HideAllAndShow(screensList[screenName]);
         }
 
         /// <summary>
@@ -249,6 +250,7 @@ namespace ScreenMgr {
         public void HideAllAndShow(BaseScreen screen) {
             HideAll();
             screenToShowInTheEnd = screen;
+            if (screenToKill == screenToShowInTheEnd) screenToKill = null;
         }
 
         /// <summary>
@@ -277,6 +279,7 @@ namespace ScreenMgr {
             }
             return ShowScreen(screensList[screenName], force);
         }
+
         /// <summary>
         /// Shows specified screen ( Use Show("MyScreenName"); instead )
         /// </summary>
@@ -286,7 +289,7 @@ namespace ScreenMgr {
                 throw new KeyNotFoundException("ScreenManager: Show(BaseScreen) failed, screen is Null.");
             }
 
-            Debug("SHOW:" + screen.name);
+            Debug("+++++++++++++   SHOW:" + screen.name);
 
             //Force screen open or wait until screens are properly removed and added
             if (!force && (screenQueueDirty || screenQueue.LastOrDefault() == screen)) {
@@ -310,7 +313,7 @@ namespace ScreenMgr {
         /// Hides ( or removes if it's a copy ) the current screen
         /// </summary>
         public void Hide() {
-            if (!screenQueueDirty && Current != null && Current.Transition) return;
+            if (!screenQueueDirty && Current != null && Current.IsTransitioning) return;
 
             screenToKill = Current;
             screenQueueDirty = true;
@@ -321,7 +324,7 @@ namespace ScreenMgr {
         /// </summary>
         public void HideAll() {
 
-            Debug("HIDE ALL");
+            Debug("---------------- HIDE ALL");
 
             foreach (var item in screenQueue) {
                 if (item == Current) continue;

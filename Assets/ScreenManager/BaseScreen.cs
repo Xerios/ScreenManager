@@ -71,14 +71,14 @@ namespace ScreenMgr {
         /// <summary>
         /// Is transitioning?
         /// </summary>
-        public bool Transition {
+        public bool IsTransitioning {
             get {
-                return gameObject.activeSelf && isTransitioning;
+                return gameObject.activeSelf && (isTransitioningIn || isTransitioningOut);
             }
         }
 
         // Internal functions, DO NOT TOUCH !
-        private bool isDuplicate, canBeDestroyed, isTransitioning, isVisible;
+        private bool isDuplicate, canBeDestroyed, isTransitioningIn, isTransitioningOut, isVisible;
         private ScreenManager screenManager;
 
         protected CanvasGroup canvasGroup;
@@ -139,7 +139,7 @@ namespace ScreenMgr {
         /// </summary>
         public void OnAnimationInEnd() {
             InteractionsEnabled(true);
-            isTransitioning = false;
+            isTransitioningIn = false;
             Debug("OnAnimation  In  End : " + name);
         }
 
@@ -148,7 +148,7 @@ namespace ScreenMgr {
         /// </summary>
         public void OnAnimationOutEnd() {
             gameObject.SetActive(false);
-            isTransitioning = false;
+            isTransitioningOut = false;
             if (isDuplicate && canBeDestroyed) Destroy(gameObject);
             if (onHide != null) onHide.Invoke(this);
             Debug("OnAnimation  Out  End : " + name);
@@ -168,7 +168,7 @@ namespace ScreenMgr {
                 if (destroy) canBeDestroyed = destroy;
 
                 if (isVisible) {
-                    isTransitioning = true;
+                    isTransitioningOut = true;
                     InteractionsEnabled(false);
                     OnAnimationOut();
                     OnHide();
@@ -194,7 +194,7 @@ namespace ScreenMgr {
                 if (!isInit) isInit = true;
 
                 isVisible = true;
-                isTransitioning = true;
+                isTransitioningIn = true;
                 OnAnimationIn();
                 OnShow();
                 if (onShow != null) onShow.Invoke(this);
@@ -210,7 +210,7 @@ namespace ScreenMgr {
         /// <param name="enabled">Should enable or disable after transition?</param>
         private IEnumerator CoroutineInteractionsEnabled(bool enabled) {
 
-            while (isTransitioning) {
+            while (IsTransitioning) {
                 yield return new WaitForEndOfFrame();
             }
 
