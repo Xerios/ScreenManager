@@ -128,11 +128,11 @@ namespace ScreenMgr {
                         if (screenToKill.keepOnTopWhenHiding) screenToKeepOnTop = screenToKill;
                         screenToKill = null;
                         Current = null;
-                        
-                        if (screenToShowInTheEnd != null) {
-                            screenQueue.Add(screenToShowInTheEnd);
-                            screenToShowInTheEnd = null;
-                        }
+                    }
+                    
+                    if (screenQueue.Count==0 && screenToShowInTheEnd != null) {
+                        screenQueue.Add(screenToShowInTheEnd);
+                        screenToShowInTheEnd = null;
                     }
 
                     BaseScreen maxPriorityScreen = screenQueue.LastOrDefault();
