@@ -115,9 +115,9 @@ namespace ScreenMgr
                 bool isEnabled = screenMgr.defaultScreen.gameObject.activeSelf;
                 GUI.color = isEnabled ? Color.white : slightGray;
 
-                GUILayout.BeginHorizontal(GUI.skin.FindStyle("TL tab mid"));
+                GUILayout.BeginHorizontal();
                 {
-                    GUILayout.Toggle(isEnabled, "", GUI.skin.FindStyle("VisibilityToggle"));
+                    GUILayout.Toggle(isEnabled, "");//, GUI.skin.FindStyle("VisibilityToggle"));
 
                     if (GUILayout.Button(screenMgr.defaultScreen.name, EditorStyles.label)) {
                         if (selectedId == -1 && (EditorApplication.timeSinceStartup - clickTime) < doubleClickTime) {
@@ -190,13 +190,13 @@ namespace ScreenMgr
 
                 GUI.color = isEnabled ? Color.white : slightGray;
 
-                GUILayout.BeginHorizontal(GUI.skin.FindStyle("TL tab mid"));
-                GUILayout.Toggle(isEnabled, "", GUI.skin.FindStyle("VisibilityToggle"));
+                GUILayout.BeginHorizontal(EditorStyles.toolbar);// GUI.skin.FindStyle("TL tab mid"));
+                GUILayout.Toggle(isEnabled, "");//, GUI.skin.FindStyle("VisibilityToggle"));
 
-                GUIStyle labelStyle = EditorStyles.label;
-                if (screenMgr.Current == screen) labelStyle = EditorStyles.boldLabel;
+                string label = child.gameObject.name;
+                if (screenMgr.Current == screen) label = "CURRENT: " + label;
 
-                if (GUILayout.Button(child.gameObject.name, labelStyle)) {
+                if (GUILayout.Button(label, EditorStyles.label)) {
                     if (selectedId==i && (EditorApplication.timeSinceStartup - clickTime) < doubleClickTime){
                         Selection.activeGameObject = child.gameObject;
                     }
@@ -228,8 +228,12 @@ namespace ScreenMgr
             }
             GUILayout.EndVertical();
 
-
             GUILayout.Space(10);
+
+            if (EditorApplication.isPlaying)
+            {
+                this.Repaint();
+            }
         }
 
         private void SpreadMode(bool active, ScreenManager screenMgr) {
