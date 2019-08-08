@@ -22,6 +22,7 @@ namespace ScreenMgr {
             Alert = 300,
         };
 
+        public Transform screensContainer;
         /// <summary>
         /// First/default screen
         /// </summary>
