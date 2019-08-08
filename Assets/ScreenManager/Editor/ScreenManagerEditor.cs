@@ -182,6 +182,7 @@ namespace ScreenMgr
                 var child = children[i];
                 bool isEnabled = child.gameObject.activeSelf;
                 var screen = child.GetComponent<BaseScreen>();
+                if(screen == null) continue;
 
                 if (screenMgr.defaultScreen!=null && screenMgr.defaultScreen.transform==child) continue; // Ignore default screen since it's already shown up there
                 if (filterPopups && screen.layerPriority != ScreenManager.LayerPriority.Normal) continue;
