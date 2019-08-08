@@ -102,7 +102,7 @@ namespace ScreenMgr
                 GUILayout.BeginHorizontal();
                 {
                     while (e.MoveNext()) {
-                        if (GUILayout.Button(e.Current.name, GUI.skin.FindStyle("Tooltip"))) Selection.activeGameObject = e.Current.gameObject;
+                        if (GUILayout.Button(e.Current.screen.name, GUI.skin.FindStyle("Tooltip"))) Selection.activeGameObject = e.Current.screen.gameObject;
                         GUILayout.Space(10);
                     }
                 }

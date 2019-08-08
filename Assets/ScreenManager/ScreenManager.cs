@@ -12,7 +12,16 @@ namespace ScreenMgr {
     /// Manages screens and their transitions
     /// </summary>
     public class ScreenManager: MonoBehaviour {
-        
+        public class ScreenNavigationData
+        {
+            public BaseScreen screen;
+            public object data;
+            public ScreenNavigationData(BaseScreen screen, object data = null)
+            {
+                this.screen = screen;
+                this.data = data;
+            }
+        }
 
         public enum LayerPriority: int {
             Low = -100,
@@ -52,7 +61,7 @@ namespace ScreenMgr {
         /// <summary>
         /// Current active stack ( excluding delayed screen popup queues )
         /// </summary>
-        public List<BaseScreen>.Enumerator Breadcrumbs {
+        public List<ScreenNavigationData>.Enumerator Breadcrumbs {
             get {
                 return screenQueue.GetEnumerator();
             }
@@ -66,7 +75,7 @@ namespace ScreenMgr {
         // Internal stuff, don't touch
         private Dictionary<string, BaseScreen> screensList;
 
-        private List<BaseScreen> screenQueue;
+        private List<ScreenNavigationData> screenQueue;
 
         private GameObject lastSelection;
 
@@ -92,7 +101,7 @@ namespace ScreenMgr {
         private void Initialize() {
             ServiceLocator.Register<ScreenManager>(this, true);
             
-            screenQueue = new List<BaseScreen>(50);
+            screenQueue = new List<ScreenNavigationData>(50);
 
             screensList = new Dictionary<string, BaseScreen>();
 
@@ -120,7 +129,7 @@ namespace ScreenMgr {
                         Debug("KILL: " + screenToKill);
                         if (onScreenHide != null) onScreenHide.Invoke(Current);
 
-                        int screenToKillIndex = screenQueue.FindLastIndex(x => x == screenToKill);
+                        int screenToKillIndex = screenQueue.FindLastIndex(x => x.screen == screenToKill);
                         if (screenToKillIndex!=-1) screenQueue.RemoveAt(screenToKillIndex);
 
                         EventSystem.current.SetSelectedGameObject(null);
@@ -133,11 +142,12 @@ namespace ScreenMgr {
                     
                     if (screenQueue.Count==0 && screenToShowInTheEnd != null) {
                         Debug("ScreenToShowInTheEnd = " + screenToShowInTheEnd);
-                        screenQueue.Add(screenToShowInTheEnd);
+                        screenQueue.Add(new ScreenNavigationData(screenToShowInTheEnd));
                         screenToShowInTheEnd = null;
                     }
 
-                    BaseScreen maxPriorityScreen = screenQueue.LastOrDefault();
+                    var maxPriority = screenQueue.LastOrDefault();
+                    BaseScreen maxPriorityScreen = maxPriority != null ? maxPriority.screen : null;
 
                     // Is highest-score screen different from current shown one? Then show highest-score screen and hide current
                     if (Current != maxPriorityScreen) {
@@ -163,6 +173,7 @@ namespace ScreenMgr {
                             if (Current == null && defaultScreen != null) Current = defaultScreen;
 
                             if (Current != null) {
+                                Current.SetTransitionData(maxPriority.data);
                                 if (onScreenShow != null) onScreenShow.Invoke(Current);
                                 Current.OnActivated();
                             }
@@ -254,11 +265,8 @@ namespace ScreenMgr {
             if (screenToKill == screenToShowInTheEnd) screenToKill = null;
         }
 
-        /// <summary>
-        /// Shows specified screen (with no return)
-        /// </summary>
-        /// <param name="screen"></param>
-        public void Show(string screenName) {
+        public void Show(string screenName)
+        {
             ShowScreen(screenName);
         }
 
@@ -266,43 +274,69 @@ namespace ScreenMgr {
         /// Shows specified screen (with no return)
         /// </summary>
         /// <param name="screen"></param>
-        public void Show(BaseScreen screen) {
+        public void Show(BaseScreen screen)
+        {
             ShowScreen(screen);
+        }
+
+        /// <summary>
+        /// Shows specified screen (with no return)
+        /// </summary>
+        /// <param name="screen"></param>
+        public BaseScreen Show(string screenName, object data)
+        {
+            return ShowScreen(screenName, data);
+        }
+
+        /// <summary>
+        /// Shows specified screen (with no return)
+        /// </summary>
+        /// <param name="screen"></param>
+        public BaseScreen Show(BaseScreen screen, object data = null)
+        {
+            return ShowScreen(screen, data);
         }
 
         /// <summary>
         /// Shows specified screen
         /// </summary>
         /// <param name="screenName"></param>
-        public BaseScreen ShowScreen(string screenName, bool force = false) {
-            if (!screensList.ContainsKey(screenName)) {
+        public BaseScreen ShowScreen(string screenName, object data = null, bool force = false)
+        {
+            if (!screensList.ContainsKey(screenName))
+            {
                 throw new KeyNotFoundException("ScreenManager: Show failed. Screen with name '" + screenName + "' does not exist.");
             }
-            return ShowScreen(screensList[screenName], force);
+            return ShowScreen(screensList[screenName], data, force);
         }
 
         /// <summary>
         /// Shows specified screen ( Use Show("MyScreenName"); instead )
         /// </summary>
         /// <param name="screen"></param>
-        public BaseScreen ShowScreen(BaseScreen screen, bool force = false) {
-            if (screen == null) {
+        public BaseScreen ShowScreen(BaseScreen screen, object data = null, bool force = false)
+        {
+            if (screen == null)
+            {
                 throw new KeyNotFoundException("ScreenManager: Show(BaseScreen) failed, screen is Null.");
             }
 
             Debug("+++++++++++++   SHOW:" + screen.name);
 
+            var lastOrDefault = screenQueue.LastOrDefault();
             //Force screen open or wait until screens are properly removed and added
-            if (!force && (screenQueueDirty || screenQueue.LastOrDefault() == screen)) {
+            if (!force && (screenQueueDirty || (lastOrDefault != null && lastOrDefault.screen == screen)))
+            {
                 return screen;
             }
 
-            screenQueue.Add(screen);
+            screenQueue.Add(new ScreenNavigationData(screen, data));
             InsertionSort(screenQueue);
 
             // Is screen a higher priority and should be show this instead of current one?
-            if (Current == null || (int)Current.layerPriority <= (int)screen.layerPriority) {
-                if (Current!=null) Current.OnDeactivated(false);
+            if (Current == null || (int)Current.layerPriority <= (int)screen.layerPriority)
+            {
+                if (Current != null) Current.OnDeactivated(false);
                 screenQueueDirty = true;
             }
 
@@ -313,7 +347,8 @@ namespace ScreenMgr {
         /// <summary>
         /// Hides ( or removes if it's a copy ) the current screen
         /// </summary>
-        public void Hide() {
+        public void Hide()
+        {
             if (!screenQueueDirty && Current != null && Current.IsTransitioning) return;
 
             screenToKill = Current;
@@ -323,14 +358,16 @@ namespace ScreenMgr {
         /// <summary>
         /// Hides all screns of specific type ( or removes them when they're a copy )
         /// </summary>
-        public void HideAll() {
+        public void HideAll()
+        {
 
             Debug("---------------- HIDE ALL");
 
-            foreach (var item in screenQueue) {
-                if (item == Current) continue;
-                item.selectedObject = null;
-                item.OnDeactivated(true, true);
+            foreach (var item in screenQueue)
+            {
+                if (item.screen == Current) continue;
+                item.screen.selectedObject = null;
+                item.screen.OnDeactivated(true, true);
             }
             screenQueue.Clear();
 
@@ -338,18 +375,21 @@ namespace ScreenMgr {
             screenQueueDirty = true;
         }
 
-        private static void InsertionSort(IList<BaseScreen> list) {
+         private static void InsertionSort(IList<ScreenNavigationData> list)
+        {
             if (list == null) throw new ArgumentNullException("list");
 
             int count = list.Count;
-            for (int j = 1; j < count; j++) {
-                BaseScreen key = list[j];
+            for (int j = 1; j < count; j++)
+            {
+                BaseScreen key = list[j].screen;
 
                 int i = j - 1;
-                for (; i >= 0 && CompareBaseScreens(list[i], key) > 0; i--) {
+                for (; i >= 0 && CompareBaseScreens(list[i].screen, key) > 0; i--)
+                {
                     list[i + 1] = list[i];
                 }
-                list[i + 1] = key;
+                list[i + 1] = list[j];
             }
         }
 

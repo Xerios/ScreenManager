@@ -82,6 +82,7 @@ namespace ScreenMgr {
         private ScreenManager screenManager;
 
         protected CanvasGroup canvasGroup;
+        protected object transitionData;
 
         /// <summary>
         /// Initialized by ScreenManager automatically, do not do it yourself unless necessary 
@@ -102,6 +103,10 @@ namespace ScreenMgr {
                 //Debug.Log("subcancelTrigger " + name + " + " + subcancelTrigger + " / " + list.Length + "  -- " + submitSelection + " / " + cancelSelection, this.gameObject);
                 if (cancelSelection != null) subcancelTrigger.SetCancelAction((e) => SelectOrInvokeButton(cancelSelection.gameObject, e));
             }
+        }
+
+        public virtual void SetTransitionData(object data){
+            this.transitionData = data;
         }
         
         /// <summary>
