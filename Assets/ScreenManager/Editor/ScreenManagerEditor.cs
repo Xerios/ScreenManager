@@ -41,8 +41,9 @@ namespace ScreenMgr
         {
             // Get the transform of the object and use that to get all children in alphabetical order
             ScreenManager screenMgr = (target as ScreenManager);
-            var transform = screenMgr.transform;
-            var children = (transform as IEnumerable).Cast<Transform>().OrderBy(t => t.gameObject.name).ToArray();
+            var transform = screenMgr.screensContainer == null ? screenMgr.transform : screenMgr.screensContainer;
+            // var children = (transform as IEnumerable).Cast<Transform>().OrderBy(t => t.gameObject.name).ToArray();
+            var children = screenMgr.GetComponentsInChildren<BaseScreen>(true);
             
             Color slightGray = new Color(1f, 1f, 1f, 0.4f);
 
@@ -101,7 +102,7 @@ namespace ScreenMgr
                 GUILayout.BeginHorizontal();
                 {
                     while (e.MoveNext()) {
-                        if (GUILayout.Button(e.Current.name, GUI.skin.FindStyle("Tooltip"))) Selection.activeGameObject = e.Current.gameObject;
+                        if (GUILayout.Button(e.Current.screen.name, GUI.skin.FindStyle("Tooltip"))) Selection.activeGameObject = e.Current.screen.gameObject;
                         GUILayout.Space(10);
                     }
                 }
@@ -182,6 +183,7 @@ namespace ScreenMgr
                 var child = children[i];
                 bool isEnabled = child.gameObject.activeSelf;
                 var screen = child.GetComponent<BaseScreen>();
+                if(screen == null) continue;
 
                 if (screenMgr.defaultScreen!=null && screenMgr.defaultScreen.transform==child) continue; // Ignore default screen since it's already shown up there
                 if (filterPopups && screen.layerPriority != ScreenManager.LayerPriority.Normal) continue;
@@ -284,14 +286,16 @@ namespace ScreenMgr
         /// </summary>
         /// <param name="ScreenMgr"></param>
         /// <param name="children"></param>
-        private void ClearNavigation(ScreenManager ScreenMgr, Transform[] children) {
+        private void ClearNavigation(ScreenManager ScreenMgr, BaseScreen[] children) {
             for (int i = 0; i < children.Length; i++) children[i].gameObject.SetActive(false);
 
             List<Selectable> selectables = new List<Selectable>();
 
             for (int i = 0; i < children.Length; i++) {
-                Transform parent = children[i];
-                BaseScreen screen = parent.GetComponent<BaseScreen>();
+                // Transform parent = children[i];
+                Transform parent = children[i].transform;
+                // BaseScreen screen = parent.GetComponent<BaseScreen>();
+                BaseScreen screen = children[i];
                 if (!screen.generateNavigation) continue;
 
                 parent.gameObject.SetActive(true);
@@ -313,15 +317,16 @@ namespace ScreenMgr
         /// </summary>
         /// <param name="ScreenMgr"></param>
         /// <param name="children"></param>
-        private void UpdateNavigation(ScreenManager ScreenMgr, Transform[] children) {
+        private void UpdateNavigation(ScreenManager ScreenMgr, BaseScreen[] children) {
             for (int i = 0; i < children.Length; i++) children[i].gameObject.SetActive(false);
 
             List<Selectable> selectables = new List<Selectable>();
 
             for (int i = 0; i < children.Length; i++) {
-                Transform parent = children[i];
-                BaseScreen screen = parent.GetComponent<BaseScreen>();
-
+                // Transform parent = children[i];
+                Transform parent = children[i].transform;
+                // BaseScreen screen = parent.GetComponent<BaseScreen>();
+                BaseScreen screen = children[i];
                 if (!screen.generateNavigation) continue;
 
                 parent.gameObject.SetActive(true);
