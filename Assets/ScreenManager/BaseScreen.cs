@@ -112,5 +112,7 @@ namespace ScreenMgr
         public bool IsShowingScreen(string screenName, out BaseScreen screen) => _screenManager.IsShowingScreen(screenName, out screen);
         public bool IsShowingScreen<T>() where T : BaseScreen => _screenManager.IsShowingScreen<T>();
         public bool IsShowingScreen<T>(out T screen) where T : BaseScreen => _screenManager.IsShowingScreen<T>(out screen);
+        public void HideAll() => _screenManager.HideAll();
+        public void ShowDefault() => _screenManager.ShowDefault();
     }
 }

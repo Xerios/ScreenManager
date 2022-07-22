@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using ScreenMgr.Tasks;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -168,7 +169,7 @@ namespace ScreenMgr
 
         public void Hide(BaseScreen screen)
         {
-            StartCoroutine(HideScreen(screen));
+            _coroutineQueue.Enqueue(HideScreen(screen));
         }
 
         private IEnumerator HideScreen(BaseScreen screen)
@@ -178,7 +179,7 @@ namespace ScreenMgr
             while (screen.IsTransitioning)
                 yield return null;
 
-            showingScreens.RemoveAll(o => o == screen);
+            showingScreens.Remove(screen);
             screen.DeActiveScreen();
             Resources.UnloadUnusedAssets();
             onScreenHide?.Invoke(screen);
@@ -210,7 +211,7 @@ namespace ScreenMgr
             var showCoroutine = ShowScreen(screenName, data);
             if (!showCoroutine.MoveNext()) return null;
             var screen = (BaseScreen)showCoroutine.Current;
-            StartCoroutine(showCoroutine);
+            _coroutineQueue.Enqueue(showCoroutine);
             return screen;
         }
 
@@ -240,18 +241,18 @@ namespace ScreenMgr
         {
             if (string.IsNullOrEmpty(screenName)) yield break;
 
-            var hideIfExist = IsShowingScreen(screenName, out var oldScreen) && !oldScreen.isPopup;
             var screen = VisualizeScreen(screensDict[screenName]);
 
             yield return screen;
 
+            var hideIfExist = IsShowingScreen(screenName, out var oldScreen) && !oldScreen.isPopup;
             if (hideIfExist)
-                yield return StartCoroutine(HideScreen(oldScreen));
+                yield return HideScreen(oldScreen);
 
             while (screen.IsTransitioning)
                 yield return null;
 
-            if (screen.hideCurrent) yield return StartCoroutine(HideScreen(Current));
+            if (screen.hideCurrent) yield return HideScreen(Current);
 
             if (screen.showAfterBeforeScreensDone)
             {
@@ -285,6 +286,19 @@ namespace ScreenMgr
         }
 
         #endregion
+
+
+        private Queue<IEnumerator> _coroutineQueue = new Queue<IEnumerator>();
+        private Task _nowRunningCoroutine;
+
+        private void Update()
+        {
+            if (_coroutineQueue.Count <= 0) return;
+            if(_nowRunningCoroutine == null || !_nowRunningCoroutine.Running)
+            {
+                _nowRunningCoroutine = new Task(_coroutineQueue.Dequeue());
+            }
+        }
 
         public void SortScreens()
         {

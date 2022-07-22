@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
 
-namespace ScreenMgr
+namespace ScreenMgr.Editors
 {
     /// <summary>
     /// Editor for ScreenManager
