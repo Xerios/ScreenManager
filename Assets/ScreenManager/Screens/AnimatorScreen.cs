@@ -16,7 +16,7 @@ namespace ScreenMgr {
 
         private IEnumerator coroutineIn = null,couroutineOut = null;
 
-        public override void OnAnimationIn() {
+        protected override void OnAnimationIn() {
             if (couroutineOut != null) {
                 StopCoroutine(couroutineOut);
             }
@@ -24,7 +24,7 @@ namespace ScreenMgr {
             StartCoroutine(coroutineIn);
         }
 
-        public override void OnAnimationOut() {
+        protected override void OnAnimationOut() {
             if (coroutineIn != null) {
                 StopCoroutine(coroutineIn);
             }
@@ -36,14 +36,14 @@ namespace ScreenMgr {
             animator.Play(animationIn, -1, 0f); // Start anim
             yield return null; // Leave one frame to get proper animation length
             yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length); // Wait until animation is finished...
-            OnAnimationInEnd(); // Execute this at end of this animation
+            base.OnAnimationIn(); // Execute this at end of this animation
         }
 
         IEnumerator CoroutineOut() {
             animator.Play(animationOut, -1, 0f); // Start anim
             yield return null; // Leave one frame to get proper animation length
             yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);// Wait until animation is finished...
-            OnAnimationOutEnd(); // Execute this at end of this animation
+            base.OnAnimationOut(); // Execute this at end of this animation
         }
     }
 

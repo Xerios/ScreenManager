@@ -13,21 +13,21 @@ public class TestMenuScript : MonoBehaviour {
 
 	public void TestPopup () {
         int i=1;
-        screenmgr.ShowPopup<Popup>("Alertbox").Message = "Test " + (i++);
-        screenmgr.ShowPopup<Popup>("Alertbox").Message = "Test " + (i++);
-        screenmgr.ShowPopup<Popup>("Alertbox").Message = "Test " + (i++);
+        screenmgr.Show<Popup>("Alertbox").Message = "Test " + (i++);
+        screenmgr.Show<Popup>("Alertbox").Message = "Test " + (i++);
+        screenmgr.Show<Popup>("Alertbox").Message = "Test " + (i++);
         StartCoroutine(TestDelayedPopup());
     }
 
 
     public IEnumerator TestDelayedPopup() {
         yield return new WaitForSeconds(2f);
-        screenmgr.ShowPopup<Popup>("Alertbox").Message = "W" +Random.value;
+        screenmgr.Show<Popup>("Alertbox").Message = "W" +Random.value;
     }
 
     public IEnumerator TestDelayedTutorial() {
         yield return new WaitForSeconds(5f);
-        screenmgr.ShowPopup<Popup>("Tutorial");
+        screenmgr.Show<Popup>("Tutorial");
     }
 
     public void LoadGame() {
