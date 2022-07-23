@@ -308,10 +308,10 @@ MonoBehaviour:
   defaultScreen: Menu
   allScreens:
   - objectGuid: 26e18a2e6ca64bc4bac7f5fde32b22c0
-    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Menu.prefab
+    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Prefabs/Menu.prefab
     objectType: ScreenMgr.SimpleTweenScreen
   - objectGuid: 50ca712b63b698d4689ade30c3c83d06
-    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Menu2.prefab
+    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Prefabs/Menu2.prefab
     objectType: ScreenMgr.SimpleTweenScreen
 --- !u!114 &2061228090
 MonoBehaviour:

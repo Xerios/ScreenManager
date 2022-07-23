@@ -217,7 +217,7 @@ MonoBehaviour:
   hideScreens: []
   showScreens:
   - objectGuid: 50ca712b63b698d4689ade30c3c83d06
-    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Menu2.prefab
+    objectPath: Assets/ScreenManager/Example/Resources/Simple Popup/Prefabs/Menu2.prefab
     objectType: ScreenMgr.SimpleTweenScreen
 --- !u!1 &2196126948045021296
 GameObject:
