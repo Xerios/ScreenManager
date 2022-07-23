@@ -54,6 +54,8 @@ public class CheckForMovedAssets : AssetPostprocessor
 
     static async void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
+        EditorSettings.serializationMode = SerializationMode.ForceText;
+
         var wasSceneDirty = ActiveScene.isDirty;
 
         foreach (var file in AssetDatabase.FindAssets("t:prefab t:scene t:scriptableobject").Select(o => AssetDatabase.GUIDToAssetPath(o)))
