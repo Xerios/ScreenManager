@@ -74,9 +74,10 @@ public class TypeCatcherDrawer : PropertyDrawer
         }
         else finalTypes.AddRange(loadedTypes);
 
+        finalTypes = finalTypes.OrderBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+
         var typeIndex = finalTypes.IndexOf(typeSelf);
-        var typesNames = finalTypes.Select(o => new GUIContent(o.Name))
-            .OrderBy(o => o.text, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        var typesNames = finalTypes.Select(o => new GUIContent(o.Name)).ToArray();
 
         var newTypeIndex = EditorGUI.Popup(position, label, typeIndex, typesNames);
 
