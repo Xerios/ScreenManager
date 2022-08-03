@@ -55,9 +55,9 @@ namespace ScreenMgr
 
         private void Initialize()
         {
-            for (int i = 0; i < transform.childCount; i++)
+            foreach(var iter in GetComponentsInChildren<BaseScreen>())
             {
-                Destroy(transform.GetChild(i).gameObject);
+                Destroy(iter.gameObject);
             }
 
             screensDict = new Dictionary<string, ObjectResourcesLoader<BaseScreen>>();

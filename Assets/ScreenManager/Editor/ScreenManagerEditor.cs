@@ -6,7 +6,6 @@ using UnityEditor;
 using System.Linq;
 using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
-using UnityEditor.Experimental.SceneManagement;
 
 namespace ScreenMgr.Editors
 {
@@ -28,7 +27,9 @@ namespace ScreenMgr.Editors
         {
             get
             {
-                return ScreenManager.GetComponentsInChildren<BaseScreen>(true);
+                return ScreenManager.GetComponentsInChildren<BaseScreen>(true)
+                    .Where(o => PrefabUtility.GetPrefabInstanceHandle(o.gameObject) != null)
+                    .ToArray();
             }
         }
 
