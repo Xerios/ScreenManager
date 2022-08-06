@@ -1,413 +1,323 @@
-﻿//#define DEBUG_ScreenManager
+using System;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
+using ScreenMgr.Tasks;
 using System.Collections;
 using System.Collections.Generic;
-using System;
-using UnityEngine.EventSystems;
-using System.Linq;
 
-namespace ScreenMgr {
+namespace ScreenMgr
+{
+    [RequireComponent(typeof(Canvas), typeof(GraphicRaycaster), typeof(CanvasScaler))]
+    public class ScreenManager : MonoBehaviour
+    {
+        public static ScreenManager Instance { get; private set; }
+        public static event Action<BaseScreen> onScreenShow, onScreenHide;
 
-    /// <summary>
-    /// Manages screens and their transitions
-    /// </summary>
-    public class ScreenManager: MonoBehaviour {
-        public class ScreenNavigationData
+        private List<BaseScreen> showingScreens = new List<BaseScreen>();
+        private Dictionary<string, ObjectResourcesLoader<BaseScreen>> screensDict;
+
+        public bool dontDestroyOnLoad;
+        public string defaultScreen = null;
+        public List<ObjectResourcesLoader<BaseScreen>> allScreens = new List<ObjectResourcesLoader<BaseScreen>>();
+
+        public BaseScreen Current
         {
-            public BaseScreen screen;
-            public object data;
-            public ScreenNavigationData(BaseScreen screen, object data = null)
+            get
             {
-                this.screen = screen;
-                this.data = data;
+                return showingScreens.OrderBy(o => o.transform.GetSiblingIndex())
+                    .Where(o => o.IsShowing)
+                    .LastOrDefault();
             }
         }
 
-        public enum LayerPriority: int {
-            Low = -100,
-            Normal = 0,
-            Popup = 100,
-            High = 200,
-            Alert = 300,
-        };
+        public Canvas Canvas => GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
 
-        public Transform screensContainer;
-        /// <summary>
-        /// First/default screen
-        /// </summary>
-        public BaseScreen defaultScreen;
-
-        /// <summary>
-        /// Always have a button selected
-        /// </summary>
-        public bool alwaysOnSelection = false;
-
-        /// <summary>
-        /// Useful for touch only menus ( removes default selection and overrides and disables alwaysOnSelection )
-        /// </summary>
-        public bool touchMode = false;
-
-        /// <summary>
-        /// Instead of selecting cancel button, execute it directly
-        /// </summary>
-        public bool instantCancelButton = false;
-
-        /// <summary>
-        /// Current active screen ( returns null when empty )
-        /// </summary>
-        [NonSerialized]
-        public BaseScreen Current = null;
-
-        /// <summary>
-        /// Current active stack ( excluding delayed screen popup queues )
-        /// </summary>
-        public List<ScreenNavigationData>.Enumerator Breadcrumbs {
-            get {
-                return screenQueue.GetEnumerator();
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                if (dontDestroyOnLoad)
+                {
+                    DontDestroyOnLoad(gameObject);
+                }
             }
-        }
+            else Destroy(gameObject);
 
-        /// <summary>
-        /// ScreenHide and Show events
-        /// </summary>
-        public Action<BaseScreen> onScreenShow,onScreenHide;
-
-        // Internal stuff, don't touch
-        private Dictionary<string, BaseScreen> screensList;
-
-        private List<ScreenNavigationData> screenQueue;
-
-        private GameObject lastSelection;
-
-        private bool screenQueueDirty = false;
-        private BaseScreen screenToKill = null;
-        private BaseScreen screenToKeepOnTop = null;
-        private BaseScreen screenToShowInTheEnd = null;
-
-        private void Awake() {
             Initialize();
         }
-        public void OnEnable(){
-            StopAllCoroutines();
-            StartCoroutine(CoroutineUpdate());
-        }
-        public void OnDisable(){
-            StopAllCoroutines();
+
+        private void OnDestroy()
+        {
+            Instance = null;
         }
 
-        /// <summary>
-        /// Initializes the class and fills the screen list with children ( executed automatically on Awake() )
-        /// </summary>
-        private void Initialize() {
-            ServiceLocator.Register<ScreenManager>(this, true);
-            
-            screenQueue = new List<ScreenNavigationData>(50);
-
-            screensList = new Dictionary<string, BaseScreen>();
-
-            foreach (BaseScreen screen in GetComponentsInChildren<BaseScreen>(true)) {
-                screen.Initialize(this, false);
-                screensList[screen.name] = screen;
+        private void Initialize()
+        {
+            foreach(var iter in GetComponentsInChildren<BaseScreen>())
+            {
+                Destroy(iter.gameObject);
             }
 
+            screensDict = new Dictionary<string, ObjectResourcesLoader<BaseScreen>>();
+            foreach (var screen in allScreens)
+            {
+                screensDict[screen.GetFileName()] = screen;
+            }
             ShowDefault();
-
-            StartCoroutine(CoroutineUpdate());
         }
-
-        public void OnDestroy() {
-            StopAllCoroutines();
-        }
-
-
-        IEnumerator CoroutineUpdate() {
-            var waitTime = new WaitForSecondsRealtime(0.1f);
-
-            while (true) {
-                if (screenQueueDirty) {
-                    if (screenToKill != null && screenToKill == Current) {
-                        Debug("KILL: " + screenToKill);
-                        if (onScreenHide != null) onScreenHide.Invoke(Current);
-
-                        int screenToKillIndex = screenQueue.FindLastIndex(x => x.screen == screenToKill);
-                        if (screenToKillIndex!=-1) screenQueue.RemoveAt(screenToKillIndex);
-
-                        EventSystem.current.SetSelectedGameObject(null);
-                        screenToKill.selectedObject = null;
-                        screenToKill.OnDeactivated(true, true);
-                        if (screenToKill.keepOnTopWhenHiding) screenToKeepOnTop = screenToKill;
-                        screenToKill = null;
-                        Current = null;
-                    }
-                    
-                    if (screenQueue.Count==0 && screenToShowInTheEnd != null) {
-                        Debug("ScreenToShowInTheEnd = " + screenToShowInTheEnd);
-                        screenQueue.Add(new ScreenNavigationData(screenToShowInTheEnd));
-                        screenToShowInTheEnd = null;
-                    }
-
-                    var maxPriority = screenQueue.LastOrDefault();
-                    BaseScreen maxPriorityScreen = maxPriority != null ? maxPriority.screen : null;
-
-                    // Is highest-score screen different from current shown one? Then show highest-score screen and hide current
-                    if (Current != maxPriorityScreen) {
-                        Debug("Different? " + Current + " != " + maxPriorityScreen);
-
-                        BaseScreen previousScreen = Current;
-
-                        if (previousScreen != null) {
-                            previousScreen.selectedObject = EventSystem.current.currentSelectedGameObject;
-                            EventSystem.current.SetSelectedGameObject(null);
-                        }
-
-                        if (maxPriorityScreen.IsTransitioning) { // Wait for transition
-                            Debug("Transition is busy? " + maxPriorityScreen);
-                            Current = null;
-                            screenQueueDirty = true;
-                            yield return waitTime;
-                            continue;
-                        } else {
-                            Debug("Transition is over! " + maxPriorityScreen);
-                            Current = maxPriorityScreen;
-
-                            if (Current == null && defaultScreen != null) Current = defaultScreen;
-
-                            if (Current != null) {
-                                Current.SetTransitionData(maxPriority.data);
-                                if (onScreenShow != null) onScreenShow.Invoke(Current);
-                                Current.OnActivated();
-                            }
-
-                            if (previousScreen != null) {
-                                previousScreen.OnDeactivated(Current.hideCurrent);
-                            }
-
-                            if (screenToKeepOnTop != null && screenToKeepOnTop.isActiveAndEnabled) {
-                                screenToKeepOnTop.transform.SetAsLastSibling();
-                                screenToKeepOnTop = null;
-                            }
-                        }
-                    }
-
-                    screenQueueDirty = false;
-                }
-
-                if (!touchMode && alwaysOnSelection) {
-                    // Make sure we're always selecting something when always-on is enabled
-                    if (Current != null && !Current.IsTransitioning) {
-                        GameObject selectedGameObject = EventSystem.current.currentSelectedGameObject;
-                        bool isCurrentActive = (selectedGameObject != null && selectedGameObject.activeInHierarchy);
-
-                        if (!isCurrentActive) {
-                            if (lastSelection!=null && lastSelection.activeInHierarchy && lastSelection.transform.IsChildOf(Current.transform)) {
-                                EventSystem.current.SetSelectedGameObject(lastSelection);
-                            } else if (Current.defaultSelection != null && Current.defaultSelection.gameObject.activeInHierarchy) {
-                                EventSystem.current.SetSelectedGameObject(Current.defaultSelection.gameObject);
-                                lastSelection = Current.defaultSelection.gameObject;
-                            }
-                        } else {
-                            //Save last selection when everything is fine
-                            lastSelection = selectedGameObject;
-                        }
-                    }
-                }
-
-                yield return waitTime;
-            }
-        }
-
-        /// <summary>
-        /// Duplicates specified screen and shows it
-        /// Good use for messageboxes, notification boxes or anything that can or will be shown multiple times
-        /// ( Use a custom class inheriting BaseScreen with OnShow(...), see Popup for example )
-        /// </summary>
-        /// <param name="screenName"></param>
-        /// <param name="data"></param>
-        public T ShowPopup<T>(string screenName) where T : BaseScreen {
-            if (!screensList.ContainsKey(screenName)) {
-                throw new KeyNotFoundException("ScreenManager: Show failed. Screen with name '" + screenName + "' does not exist.");
-            }
-
-            GameObject newDupeScreen = GameObject.Instantiate(screensList[screenName].gameObject);
-            newDupeScreen.transform.SetParent(transform, false);
-            BaseScreen baseScreen = newDupeScreen.GetComponent<BaseScreen>();
-            baseScreen.Initialize(this, true);
-
-            newDupeScreen.name = screenName + " (" + (baseScreen.ID) + ")";
-
-
-            return ShowScreen(baseScreen,true) as T;
-        }
-
-        /// <summary>
-        /// Shows the default screen ( if set )
-        /// </summary>
-        public void ShowDefault(bool force = false) {
-            if (defaultScreen != null) ShowScreen(defaultScreen, force);
-        }
-
-        /// <summary>
-        /// Hides all screens ( clearing the stack ) and shows specified screen
-        /// </summary>
-        public void HideAllAndShow(string screenName) {
-            if (!screensList.ContainsKey(screenName)) {
-                throw new KeyNotFoundException("ScreenManager: HideAllAndShow failed. Screen with name '" + screenName + "' does not exist.");
-            }
-            HideAllAndShow(screensList[screenName]);
-        }
-
-        /// <summary>
-        /// Hides all screens ( clearing the stack ) and shows specified screen
-        /// </summary>
-        public void HideAllAndShow(BaseScreen screen) {
-            HideAll();
-            screenToShowInTheEnd = screen;
-            if (screenToKill == screenToShowInTheEnd) screenToKill = null;
-        }
-
-        public void Show(string screenName)
+        public void ShowDefault()
         {
-            ShowScreen(screenName);
+            if (!string.IsNullOrEmpty(defaultScreen))
+                Show(defaultScreen);
         }
 
-        /// <summary>
-        /// Shows specified screen (with no return)
-        /// </summary>
-        /// <param name="screen"></param>
-        public void Show(BaseScreen screen)
+        public bool IsShowingScreen<T>() where T : BaseScreen
         {
-            ShowScreen(screen);
+            return IsShowingScreen(GetScreenByType(typeof(T)));
         }
 
-        /// <summary>
-        /// Shows specified screen (with no return)
-        /// </summary>
-        /// <param name="screen"></param>
-        public BaseScreen Show(string screenName, object data)
+        public bool IsShowingScreen(Type type)
         {
-            return ShowScreen(screenName, data);
+            return IsShowingScreen(GetScreenByType(type));
         }
 
-        /// <summary>
-        /// Shows specified screen (with no return)
-        /// </summary>
-        /// <param name="screen"></param>
-        public BaseScreen Show(BaseScreen screen, object data = null)
+        public bool IsShowingScreen(string screenName)
         {
-            return ShowScreen(screen, data);
+            return GetScreenByName(screenName) != null;
         }
 
-        /// <summary>
-        /// Shows specified screen
-        /// </summary>
-        /// <param name="screenName"></param>
-        public BaseScreen ShowScreen(string screenName, object data = null, bool force = false)
+        public bool IsShowingScreen(Type type, out BaseScreen screen)
         {
-            if (!screensList.ContainsKey(screenName))
+            var screenName = GetScreenByType(type);
+            screen = GetScreenByName(screenName);
+            return IsShowingScreen(screenName);
+        }
+
+        public bool IsShowingScreen(string screenName, out BaseScreen screen)
+        {
+            screen = GetScreenByName(screenName);
+            return IsShowingScreen(screenName);
+        }
+
+        public bool IsShowingScreen<T>(out T screen) where T : BaseScreen
+        {
+            var screenName = GetScreenByType(typeof(T));
+            screen = (T)GetScreenByName(screenName);
+            return IsShowingScreen(screenName);
+        }
+
+        private BaseScreen GetScreenByName(string screenName)
+        {
+            return showingScreens.FirstOrDefault(o => o.name == screenName);
+        }
+
+        private string GetScreenByType(Type type)
+        {
+            if (type.Equals(typeof(BaseScreen)))
+                throw new Exception(
+                    $"[{nameof(ScreenManager)}] You Can't Get Screen With Type Of {nameof(BaseScreen)}");
+
+
+            foreach (var iter in screensDict.Values)
             {
-                throw new KeyNotFoundException("ScreenManager: Show failed. Screen with name '" + screenName + "' does not exist.");
+                if (type.IsAssignableFrom(iter.ObjectType))
+                    return iter.GetFileName();
             }
-            return ShowScreen(screensList[screenName], data, force);
+
+            throw new KeyNotFoundException(
+                $"[{nameof(ScreenManager)}] Screen With Type Of {type.Name} Could Not Found");
         }
 
-        /// <summary>
-        /// Shows specified screen ( Use Show("MyScreenName"); instead )
-        /// </summary>
-        /// <param name="screen"></param>
-        public BaseScreen ShowScreen(BaseScreen screen, object data = null, bool force = false)
+        #region HideScreens
+
+        public void HideAll()
         {
-            if (screen == null)
+            foreach (var iter in new List<BaseScreen>(showingScreens))
             {
-                throw new KeyNotFoundException("ScreenManager: Show(BaseScreen) failed, screen is Null.");
+                Hide(iter);
+            }
+        }
+
+        public void HideCurrent()
+        {
+            Hide(Current);
+        }
+
+        public void Hide(string screenName)
+        {
+            if (!screensDict.ContainsKey(screenName))
+            {
+                throw new KeyNotFoundException(
+                    $"[{nameof(ScreenManager)}] Could Not Find Screen With Key {screenName}");
             }
 
-            Debug("+++++++++++++   SHOW:" + screen.name);
+            Hide(GetScreenByName(screenName));
+        }
 
-            var lastOrDefault = screenQueue.LastOrDefault();
-            //Force screen open or wait until screens are properly removed and added
-            if (!force && (screenQueueDirty || (lastOrDefault != null && lastOrDefault.screen == screen)))
+        public void Hide(Type type)
+        {
+            var screen = GetScreenByType(type);
+            Hide(screen);
+        }
+
+        public void Hide<T>(object _ = null)
+        {
+            Hide(GetScreenByType(typeof(T)));
+        }
+
+        public void Hide(BaseScreen screen)
+        {
+            _coroutineQueue.Enqueue(HideScreen(screen));
+        }
+
+        private IEnumerator HideScreen(BaseScreen screen)
+        {
+            if (screen == null || !IsShowingScreen(screen.name)) yield break;
+
+            while (screen.IsTransitioning)
+                yield return null;
+
+            showingScreens.Remove(screen);
+            screen.DeActiveScreen();
+            Resources.UnloadUnusedAssets();
+            onScreenHide?.Invoke(screen);
+        }
+
+        #endregion
+
+        #region ShowScreens
+
+        public T Show<T>(object data = null) where T : BaseScreen
+        {
+            return (T)Show(typeof(T), data);
+        }
+
+        public BaseScreen Show(Type type, object data = null)
+        {
+            var screen = GetScreenByType(type);
+            return Show(screen, data);
+        }
+
+        public BaseScreen Show(string screenName, object data = null)
+        {
+            if (!screensDict.ContainsKey(screenName))
             {
-                return screen;
+                throw new KeyNotFoundException(
+                    $"[{nameof(ScreenManager)}] Could Not Find Screen With Key {screenName}");
             }
 
-            screenQueue.Add(new ScreenNavigationData(screen, data));
-            InsertionSort(screenQueue);
-
-            // Is screen a higher priority and should be show this instead of current one?
-            if (Current == null || (int)Current.layerPriority <= (int)screen.layerPriority)
-            {
-                if (Current != null) Current.OnDeactivated(false);
-                screenQueueDirty = true;
-            }
-
+            var showCoroutine = ShowScreen(screenName, data);
+            if (!showCoroutine.MoveNext()) return null;
+            var screen = (BaseScreen)showCoroutine.Current;
+            _coroutineQueue.Enqueue(showCoroutine);
             return screen;
         }
 
-
-        /// <summary>
-        /// Hides ( or removes if it's a copy ) the current screen
-        /// </summary>
-        public void Hide()
+        public void ShowScreen(string screenName)
         {
-            if (!screenQueueDirty && Current != null && Current.IsTransitioning) return;
-
-            screenToKill = Current;
-            screenQueueDirty = true;
+            Show(screenName, null);
         }
 
-        /// <summary>
-        /// Hides all screns of specific type ( or removes them when they're a copy )
-        /// </summary>
-        public void HideAll()
+        public BaseScreen VisualizeScreen(ObjectResourcesLoader<BaseScreen> screenLoader)
         {
+            var screen = Instantiate(screenLoader.LoadObjectFromResources(), transform);
+            var screenRectTransform = screen.GetComponent<RectTransform>();
+            screenRectTransform.localScale = Vector3.one;
 
-            Debug("---------------- HIDE ALL");
+            screenRectTransform.anchorMin = Vector2.zero;
+            screenRectTransform.anchorMax = Vector2.one;
+            screenRectTransform.offsetMin = Vector2.zero;
+            screenRectTransform.offsetMax = Vector2.zero;
 
-            foreach (var item in screenQueue)
-            {
-                if (item.screen == Current) continue;
-                item.screen.selectedObject = null;
-                item.screen.OnDeactivated(true, true);
-            }
-            screenQueue.Clear();
-
-            screenToKill = Current;
-            screenQueueDirty = true;
+            screen.gameObject.SetActive(true);
+            screen.name = screenLoader.GetFileName();
+            screen.Initialize(this);
+            return screen;
         }
 
-         private static void InsertionSort(IList<ScreenNavigationData> list)
+        private IEnumerator ShowScreen(string screenName, object data)
         {
-            if (list == null) throw new ArgumentNullException("list");
+            if (string.IsNullOrEmpty(screenName)) yield break;
 
-            int count = list.Count;
-            for (int j = 1; j < count; j++)
+            var screen = VisualizeScreen(screensDict[screenName]);
+
+            yield return screen;
+
+            var hideIfExist = IsShowingScreen(screenName, out var oldScreen) && !oldScreen.isPopup;
+            if (hideIfExist)
+                yield return HideScreen(oldScreen);
+
+            while (screen.IsTransitioning)
+                yield return null;
+
+            if (screen.hideCurrent) yield return HideScreen(Current);
+
+            if (screen.showAfterBeforeScreensDone)
             {
-                BaseScreen key = list[j].screen;
+                var timeToCheckAnimationsAreFinished = new WaitForSecondsRealtime(1);
 
-                int i = j - 1;
-                for (; i >= 0 && CompareBaseScreens(list[i].screen, key) > 0; i--)
+                while (true)
                 {
-                    list[i + 1] = list[i];
+                    var shouldBreak = true;
+
+                    foreach (var iter in showingScreens)
+                    {
+                        if (iter == screen) break;
+                        if (iter.IsTransitioning)
+                        {
+                            shouldBreak = false;
+                            break;
+                        }
+                    }
+
+                    if (shouldBreak) break;
+                    yield return timeToCheckAnimationsAreFinished;
                 }
-                list[i + 1] = list[j];
+            }
+
+
+            showingScreens.Add(screen);
+            screen.transitionData = data;
+            screen.ActiveScreen();
+            SortScreens();
+            onScreenShow?.Invoke(screen);
+        }
+
+        #endregion
+
+
+        private Queue<IEnumerator> _coroutineQueue = new Queue<IEnumerator>();
+        private Task _nowRunningCoroutine;
+
+        private void Update()
+        {
+            if (_coroutineQueue.Count <= 0) return;
+            if(_nowRunningCoroutine == null || !_nowRunningCoroutine.Running)
+            {
+                _nowRunningCoroutine = new Task(_coroutineQueue.Dequeue());
             }
         }
 
-        private static int CompareBaseScreens(BaseScreen x, BaseScreen y) {
-            int result = 1;
-            if (x != null && x is BaseScreen &&
-                y != null && y is BaseScreen) {
-                BaseScreen screenX = (BaseScreen)x;
-                BaseScreen screenY = (BaseScreen)y;
-                result = screenX.CompareTo(screenY);
-            }
-            return result;
-        }
+        public void SortScreens()
+        {
+            List<BaseScreen> screens;
 
-        [System.Diagnostics.Conditional("DEBUG_ScreenManager")]
-        private void Debug(string str) {
-            UnityEngine.Debug.Log("ScreenManager: <b>" + str + "</b>", this);
+            foreach (var _ in Enumerable.Range(0, showingScreens.Count))
+            {
+                foreach (var screenIndex in Enumerable.Range(0, showingScreens.Count - 1))
+                {
+                    screens = showingScreens.OrderBy(o => o.transform.GetSiblingIndex()).ToList();
+                    var first = screens[screenIndex];
+
+                    if (!first.IsShowing) continue;
+
+                    var second = screens[screenIndex + 1];
+                    if (first.SortingOrder > second.SortingOrder)
+                        first.transform.SetSiblingIndex(first.transform.GetSiblingIndex() + 1);
+                }
+            }
         }
     }
-
 }

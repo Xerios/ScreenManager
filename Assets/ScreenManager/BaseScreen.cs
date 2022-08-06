@@ -1,321 +1,118 @@
-﻿//#define DEBUG_ScreenManager
-using UnityEngine;
-using System.Collections;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using System;
+using UnityEngine;
+using UnityEngine.Events;
 
-namespace ScreenMgr {
-
-    /// <summary>
-    /// Base screen class, any custom screen class should inherit from this.
-    /// Handles 
-    /// </summary>
+namespace ScreenMgr
+{
     [RequireComponent(typeof(CanvasGroup))]
-    public class BaseScreen : MonoBehaviour, IComparable<BaseScreen> {
-        
-        /// Unique ID for all BaseScreens
+    public class BaseScreen : MonoBehaviour
+    {
+        [Space(30)]
+        public UnityEvent<BaseScreen> onShow, onHide;
+        public bool hideCurrent;
+        public bool showAfterBeforeScreensDone = true;
+        public bool getControlOfRaycastChatching;
+        public bool isPopup;
+
         [HideInInspector]
-        public readonly int ID = UniqueID<BaseScreen>.NextUID;
+        public object transitionData;
 
-        [Header("Generation Settings")]
-        /// <summary>
-        /// Should Navigation be automatically updated for this screen?
-        /// </summary>
-        public bool generateNavigation = true;
-        
-        /// <summary>
-        /// Selectable to execute on cancel
-        /// </summary>
-        public Selectable cancelSelection;
-
-        [Header("Settings")]
-        /// <summary>
-        /// Hide previous screen or overlay on top
-        /// </summary>
-        public bool hideCurrent = true;
-
-        /// <summary>
-        /// Keep the screen on top of all other screens when hiding
-        /// </summary>
-        public bool keepOnTopWhenHiding = true;
-
-        /// <summary>
-        /// Priority over normal screens ( so that they're always on top of other screens )
-        /// </summary>
-        public ScreenManager.LayerPriority layerPriority = ScreenManager.LayerPriority.Normal;
-
-        /// <summary>
-        /// Default selected button/selectable item
-        /// </summary>
-        public Selectable defaultSelection;
-
-        /// <summary>
-        /// onShow and onHide, executed when window is shown or hidden
-        /// </summary>
         [HideInInspector]
-        public bool isInit = false;
+        public CanvasGroup canvasGroup;
 
-        /// <summary>
-        /// onShow and onHide, executed when window is shown or hidden
-        /// </summary>
-        [HideInInspector]
-        public Action<BaseScreen> onShow,onHide;
+        [SerializeField] private int _sortingOrder;
 
-        /// <summary>
-        /// Last selected selectable object
-        /// </summary>
-        [HideInInspector]
-        public GameObject selectedObject;
+        private ScreenManager _screenManager;
+        private bool _isTransitioningIn, _isTransitioningOut;
 
-        /// <summary>
-        /// Is transitioning?
-        /// </summary>
-        public bool IsTransitioning {
-            get {
-                return gameObject.activeSelf && (isTransitioningIn || isTransitioningOut);
+        public bool IsTransitioning => _isTransitioningIn || _isTransitioningOut;
+        public bool IsShowing { get; private set; }
+
+        public int SortingOrder
+        {
+            get { return _sortingOrder; }
+            set
+            {
+                _sortingOrder = value;
+                _screenManager.SortScreens();
             }
         }
 
-        // Internal functions, DO NOT TOUCH !
-        private bool isDuplicate, canBeDestroyed, isTransitioningIn, isTransitioningOut, isVisible;
-        private ScreenManager screenManager;
+        public void Initialize(ScreenManager screenManager)
+        {
+            _screenManager = screenManager;
+            canvasGroup = GetComponent<CanvasGroup>();
 
-        protected CanvasGroup canvasGroup;
-        protected object transitionData;
-
-        /// <summary>
-        /// Initialized by ScreenManager automatically, do not do it yourself unless necessary 
-        /// </summary>
-        /// <param name="scrnMgr">Screen Manager</param>
-        /// <param name="isCopy">Is it a copy of a previous screen?</param>
-        public void Initialize(ScreenManager scrnMgr, bool isCopy = false) {
-            screenManager = scrnMgr;
-            isDuplicate = isCopy;
-            canvasGroup = gameObject.GetComponentInChildren<CanvasGroup>();
-            InteractionsEnabled(false);
-            gameObject.SetActive(false);
-            isVisible = false;
-
-            // Necessary for submit and cancel calls
-            var list = this.GetComponentsInChildren<CancelTrigger>(true);
-            foreach (var subcancelTrigger in list) {
-                //Debug.Log("subcancelTrigger " + name + " + " + subcancelTrigger + " / " + list.Length + "  -- " + submitSelection + " / " + cancelSelection, this.gameObject);
-                if (cancelSelection != null) subcancelTrigger.SetCancelAction((e) => SelectOrInvokeButton(cancelSelection.gameObject, e));
-            }
+            ScreenManager.onScreenShow += OnScreensChanged;
+            ScreenManager.onScreenHide += OnScreensChanged;
         }
 
-        public virtual void SetTransitionData(object data){
-            this.transitionData = data;
-        }
-        
-        /// <summary>
-        /// Executed when Show is used
-        /// </summary>
-        public virtual void OnShow() {
-            // Do nothing...
+        private void OnDestroy()
+        {
+            ScreenManager.onScreenShow -= OnScreensChanged;
+            ScreenManager.onScreenHide -= OnScreensChanged;
         }
 
-        /// <summary>
-        /// Executed when Hide is used
-        /// </summary>
-        public virtual void OnHide() {
-            // Do nothing...
+        private void OnScreensChanged(BaseScreen screen)
+        {
+            if (getControlOfRaycastChatching)
+                canvasGroup.blocksRaycasts = _screenManager.Current == this;
         }
 
-        /// <summary>
-        /// Animation In starts ( basically when screen appears )
-        /// </summary>
-        public virtual void OnAnimationIn() {
-            OnAnimationInEnd(); // Execute this at end of this animation
-        }
-
-        /// <summary>
-        /// Animation Out starts ( basically when screen disappears )
-        /// </summary>
-        public virtual void OnAnimationOut() {
-            OnAnimationOutEnd(); // Execute this at end of this animation
-        }
-
-        //--------------------------------------
-
-        /// <summary>
-        /// This should be executed at the end of the focus ( when screen starts ) animation ( OnAnimationIn() )
-        /// </summary>
-        public void OnAnimationInEnd() {
-            InteractionsEnabled(true);
-            isTransitioningIn = false;
-            Debug("OnAnimation  In  End : " + name);
-        }
-
-        /// <summary>
-        /// This should be executed at the end of the blur ( when screen loses focus ) animation ( OnAnimationOut() )
-        /// </summary>
-        public void OnAnimationOutEnd() {
-            gameObject.SetActive(false);
-            isTransitioningOut = false;
-            if (isDuplicate && canBeDestroyed) Destroy(gameObject);
-            if (onHide != null) onHide.Invoke(this);
-            Debug("OnAnimation  Out  End : " + name);
-        }
-
-        /// <summary>
-        /// DO NOT USE !
-        /// Internal function executed when window loses focus
-        /// </summary>
-        /// <param name="hide">Should hide or disable?</param>
-        /// <param name="destroy">Should destroy or desactivate?</param>
-        public void OnDeactivated(bool hide, bool destroy = false) {
-            Debug("BLUR ( "+ hide+" ) : "+ name);
-            if (!isInit) return;
-
-            if (hide) {
-                if (destroy) canBeDestroyed = destroy;
-
-                if (isVisible) {
-                    isTransitioningOut = true;
-                    InteractionsEnabled(false);
-                    OnAnimationOut();
-                    OnHide();
-                }
-
-                isVisible = false;
-            } else if (isVisible){
-                screenManager.StartCoroutine(CoroutineInteractionsEnabled(false));
-            }
-        }
-
-        /// <summary>
-        /// DO NOT USE !
-        /// Internal function executed when window gains focus
-        /// </summary>
-        /// <param name="show">Should show or enable?</param>
-        public void OnActivated() {
-            Debug("FOCUS : " + name);
-
+        public void ActiveScreen()
+        {
+            IsShowing = true;
+            _isTransitioningIn = true;
             gameObject.SetActive(true);
-
-            if (!isVisible) {
-                if (!isInit) isInit = true;
-
-                isVisible = true;
-                isTransitioningIn = true;
-                OnAnimationIn();
-                OnShow();
-                if (onShow != null) onShow.Invoke(this);
-            } else {
-                screenManager.StartCoroutine(CoroutineInteractionsEnabled(true));
-            }
             transform.SetAsLastSibling();
+            OnAnimationIn();
+            OnShow();
         }
 
-        /// <summary>
-        /// Changes canvas group state of interactable and blockRaycasts right after transition
-        /// </summary>
-        /// <param name="enabled">Should enable or disable after transition?</param>
-        private IEnumerator CoroutineInteractionsEnabled(bool enabled) {
-
-            while (IsTransitioning) {
-                yield return new WaitForEndOfFrame();
-            }
-
-            canvasGroup.blocksRaycasts = enabled;
-            //canvasGroup.interactable = enabled;
-        
-            if (enabled) yield return screenManager.StartCoroutine(CoroutineInternalSelect());
+        public void DeActiveScreen()
+        {
+            IsShowing = false;
+            _isTransitioningOut = true;
+            OnAnimationOut();
+            OnHide();
+            Destroy(gameObject);
         }
 
-        /// <summary>
-        /// Changes canvas group state of interactable and blockRaycasts instantly
-        /// </summary>
-        /// <param name="enabled">Should enable or disable after transition?</param>
-        private void InteractionsEnabled(bool enabled) {
-            canvasGroup.blocksRaycasts = enabled;
-            //canvasGroup.interactable = enabled;
-
-            if (enabled) screenManager.StartCoroutine(CoroutineInternalSelect());
+        protected virtual void OnShow()
+        {
+            //Do Nothing...
         }
 
-        /// <summary>
-        /// Select last selected button of this screen after one frame ( necessary )
-        /// </summary>
-        private IEnumerator CoroutineInternalSelect() {
-            yield return new WaitForEndOfFrame();
-            if (!isVisible) yield break;
-
-            GameObject go = selectedObject != null ? selectedObject : (defaultSelection != null ? defaultSelection.gameObject : FindFirstEnabledSelectable(gameObject));
-            SetSelected(go);
-        }
-        
-        /// <summary>
-        /// Finds the first Selectable element in the providade hierarchy.
-        /// </summary>
-        /// <param name="gameObject">GameObject to search in, looks in innactive gameobjects too</param>
-        private static GameObject FindFirstEnabledSelectable(GameObject gameObject) {
-            GameObject go = null;
-            var selectables = gameObject.GetComponentsInChildren<Selectable>(true);
-            foreach (var selectable in selectables) {
-                if (selectable.IsActive() && selectable.IsInteractable()) {
-                    go = selectable.gameObject;
-                    break;
-                }
-            }
-            return go;
+        protected virtual void OnHide()
+        {
+            //Do Nothing...
         }
 
-        /// <summary>
-        /// Make the provided GameObject selected When using the mouse/touch we actually want to set it as the previously selected and set nothing as selected for now.
-        /// </summary>
-        /// <param name="go">GameObject to select</param>
-        private void SetSelected(GameObject go) {
-            if (screenManager.touchMode) return;
-            
-            //Select the GameObject.
-            EventSystem.current.SetSelectedGameObject(go);
-
-            //If we are using the keyboard right now, that's all we need to do.
-            var standaloneInputModule = EventSystem.current.currentInputModule as StandaloneInputModule;
-            if (standaloneInputModule != null) return;
-
-            //Since we are using a pointer device, we don't want anything selected. 
-            //But if the user switches to the keyboard, we want to start the navigation from the provided game object.
-            //So here we set the current Selected to null, so the provided gameObject becomes the Last Selected in the EventSystem.
-            EventSystem.current.SetSelectedGameObject(null);
+        protected virtual void OnAnimationIn()
+        {
+            _isTransitioningIn = false;
+            onShow?.Invoke(this);
         }
 
-        /// <summary>
-        /// Select Submit selectable or invoke submit if already selected
-        /// </summary>
-        /// <param name="e"></param>
-        public void SelectOrInvokeButton(GameObject go, BaseEventData e) {
-            //Debug.Log("SELECT OR USE " + go, go);
-            if (!screenManager.instantCancelButton && EventSystem.current.currentSelectedGameObject != go) {
-                if (!screenManager.touchMode) EventSystem.current.SetSelectedGameObject(go);
-            } else {
-                go.GetComponent<ISubmitHandler>().OnSubmit(e);
-            }
+        protected virtual void OnAnimationOut()
+        {
+            _isTransitioningOut = false;
+            transform.SetAsFirstSibling();
+            onHide?.Invoke(this);
         }
 
-        /// <summary>
-        /// Compares against other BaseScreen's priority, used for sorting
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public int CompareTo(BaseScreen obj) {
-            int result = 0;
-
-            if ((int)layerPriority != (int)obj.layerPriority) {
-                result = ((int)layerPriority).CompareTo((int)obj.layerPriority);
-            }
-
-            return result;
-        }
-
-        [System.Diagnostics.Conditional("DEBUG_ScreenManager")]
-        private void Debug(string str) {
-            UnityEngine.Debug.Log("BaseScreen: <b>" + str + "</b>", this);
-        }
+        public void HideScreen() => _screenManager.Hide(this);
+        public void HideScreen(string screenName) => _screenManager.Hide(screenName);
+        public void HideScreen<T>(object data = null) where T : BaseScreen => _screenManager.Hide<T>(data);
+        public void ShowSreen(string screenName) => _screenManager.Show(screenName);
+        public BaseScreen ShowScreen(string screenName, object data = null) => _screenManager.Show(screenName, data);
+        public BaseScreen ShowScreen(Type type, object data = null) => _screenManager.Show(type, data);
+        public T ShowScreen<T>(object data = null) where T : BaseScreen => _screenManager.Show<T>(data);
+        public bool IsShowingScreen(string screenName) => _screenManager.IsShowingScreen(screenName);
+        public bool IsShowingScreen(string screenName, out BaseScreen screen) => _screenManager.IsShowingScreen(screenName, out screen);
+        public bool IsShowingScreen<T>() where T : BaseScreen => _screenManager.IsShowingScreen<T>();
+        public bool IsShowingScreen<T>(out T screen) where T : BaseScreen => _screenManager.IsShowingScreen<T>(out screen);
+        public void HideAll() => _screenManager.HideAll();
+        public void ShowDefault() => _screenManager.ShowDefault();
     }
-
-
 }
