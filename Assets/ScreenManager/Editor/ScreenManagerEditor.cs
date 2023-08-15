@@ -23,6 +23,15 @@ namespace ScreenMgr.Editors
         private double doubleClickTime = 0.3;
         private bool isDuplicated;
 
+        // Support incorrect spelling of Unity GUI Style strings which were later fixed
+#if UNITY_2021_3_OR_NEWER
+        private const string toolbarSearchTextField = "ToolbarSearchTextField";
+        private const string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
+#else
+        private const string toolbarSearchTextField = "ToolbarSearchTextField";
+        private const string toolbarSearchCancelButton = "ToolbarSeachCancelButton";
+#endif
+
         private BaseScreen[] TestingScreens
         {
             get
@@ -292,6 +301,8 @@ namespace ScreenMgr.Editors
                 //GUILayout.FlexibleSpace();
                 searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle("ToolbarSeachTextField")/*, GUILayout.MaxWidth(300)*/);
                 if (GUILayout.Button("", GUI.skin.FindStyle("ToolbarSeachCancelButton")))
+                searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle(toolbarSearchTextField));
+                if (GUILayout.Button("", GUI.skin.FindStyle(toolbarSearchCancelButton)))
                 {
                     // Remove focus if cleared
                     searchString = "";
