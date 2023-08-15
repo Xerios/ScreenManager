@@ -22,16 +22,8 @@ namespace ScreenMgr.Editors
         private int selectedId = -99;
         private double doubleClickTime = 0.3;
         private bool isDuplicated;
-
-        // Support incorrect spelling of Unity GUI Style strings which were later fixed
-        // in Unity 2021.3.28 and higher.
-#if UNITY_2021_3_OR_NEWER && !(UNITY_2021_3_27 || UNITY_2021_3_26 || UNITY_2021_3_25) // .. etc
-        private const string toolbarSearchTextField = "ToolbarSearchTextField";
-        private const string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
-#else
-        private const string toolbarSearchTextField = "ToolbarSeachTextField";
-        private const string toolbarSearchCancelButton = "ToolbarSeachCancelButton";
-#endif
+        private GUIStyle toolbarSearchCancelButtonStyle;
+        private GUIStyle toolbarSearchTextFieldStyle;
 
         private BaseScreen[] TestingScreens
         {
@@ -300,8 +292,16 @@ namespace ScreenMgr.Editors
             {
                 GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
                 //GUILayout.FlexibleSpace();
-                searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle(toolbarSearchTextField));
-                if (GUILayout.Button("", GUI.skin.FindStyle(toolbarSearchCancelButton)))
+                toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSearchTextField");
+                if (toolbarSearchTextFieldStyle == null)
+                    toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSeachTextField");
+
+                toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSearchCancelButton");
+                if (toolbarSearchCancelButtonStyle == null)
+                    toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSeachCancelButton");
+
+                searchString = GUILayout.TextField(searchString, toolbarSearchTextFieldStyle);
+                if (GUILayout.Button("", toolbarSearchCancelButtonStyle))
                 {
                     // Remove focus if cleared
                     searchString = "";
