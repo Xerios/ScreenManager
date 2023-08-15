@@ -24,7 +24,8 @@ namespace ScreenMgr.Editors
         private bool isDuplicated;
 
         // Support incorrect spelling of Unity GUI Style strings which were later fixed
-#if UNITY_2021_3_28_OR_NEWER
+        // in Unity 2021.3.28 and higher.
+#if UNITY_2021_3_OR_NEWER && !(UNITY_2021_3_27 || UNITY_2021_3_26 || UNITY_2021_3_25) // .. etc
         private const string toolbarSearchTextField = "ToolbarSearchTextField";
         private const string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
 #else
@@ -299,8 +300,6 @@ namespace ScreenMgr.Editors
             {
                 GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
                 //GUILayout.FlexibleSpace();
-                searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle("ToolbarSeachTextField")/*, GUILayout.MaxWidth(300)*/);
-                if (GUILayout.Button("", GUI.skin.FindStyle("ToolbarSeachCancelButton")))
                 searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle(toolbarSearchTextField));
                 if (GUILayout.Button("", GUI.skin.FindStyle(toolbarSearchCancelButton)))
                 {
