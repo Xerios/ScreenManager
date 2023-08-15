@@ -24,11 +24,11 @@ namespace ScreenMgr.Editors
         private bool isDuplicated;
 
         // Support incorrect spelling of Unity GUI Style strings which were later fixed
-#if UNITY_2021_3_OR_NEWER
+#if UNITY_2021_3_28_OR_NEWER
         private const string toolbarSearchTextField = "ToolbarSearchTextField";
         private const string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
 #else
-        private const string toolbarSearchTextField = "ToolbarSearchTextField";
+        private const string toolbarSearchTextField = "ToolbarSeachTextField";
         private const string toolbarSearchCancelButton = "ToolbarSeachCancelButton";
 #endif
 
