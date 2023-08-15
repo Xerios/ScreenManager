@@ -291,7 +291,8 @@ namespace ScreenMgr.Editors
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             {
                 GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
-                //GUILayout.FlexibleSpace();
+                
+                // Below is a result of Unity's typo in versions prior to 2021.3.28
                 toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSearchTextField");
                 if (toolbarSearchTextFieldStyle == null)
                     toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSeachTextField");
