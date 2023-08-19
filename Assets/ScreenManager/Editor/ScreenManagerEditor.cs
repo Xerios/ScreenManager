@@ -25,6 +25,18 @@ namespace ScreenMgr.Editors
         private GUIStyle toolbarSearchCancelButtonStyle;
         private GUIStyle toolbarSearchTextFieldStyle;
 
+        public void OnEnable()
+        {
+            // Below is a result of Unity's typo in versions prior to 2021.3.28
+            toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSearchTextField");
+            if (toolbarSearchTextFieldStyle == null)
+                toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSeachTextField");
+
+            toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSearchCancelButton");
+            if (toolbarSearchCancelButtonStyle == null)
+                toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSeachCancelButton");
+        }
+
         private BaseScreen[] TestingScreens
         {
             get
@@ -292,15 +304,6 @@ namespace ScreenMgr.Editors
             {
                 GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
                 
-                // Below is a result of Unity's typo in versions prior to 2021.3.28
-                toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSearchTextField");
-                if (toolbarSearchTextFieldStyle == null)
-                    toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSeachTextField");
-
-                toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSearchCancelButton");
-                if (toolbarSearchCancelButtonStyle == null)
-                    toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSeachCancelButton");
-
                 searchString = GUILayout.TextField(searchString, toolbarSearchTextFieldStyle);
                 if (GUILayout.Button("", toolbarSearchCancelButtonStyle))
                 {
