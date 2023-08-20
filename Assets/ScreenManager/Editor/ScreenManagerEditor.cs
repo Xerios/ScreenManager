@@ -22,6 +22,20 @@ namespace ScreenMgr.Editors
         private int selectedId = -99;
         private double doubleClickTime = 0.3;
         private bool isDuplicated;
+        private GUIStyle toolbarSearchCancelButtonStyle;
+        private GUIStyle toolbarSearchTextFieldStyle;
+
+        public void OnEnable()
+        {
+            // Below is a result of Unity's typo in versions prior to 2021.3.28
+            toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSearchTextField");
+            if (toolbarSearchTextFieldStyle == null)
+                toolbarSearchTextFieldStyle = GUI.skin.FindStyle("ToolbarSeachTextField");
+
+            toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSearchCancelButton");
+            if (toolbarSearchCancelButtonStyle == null)
+                toolbarSearchCancelButtonStyle = GUI.skin.FindStyle("ToolbarSeachCancelButton");
+        }
 
         private BaseScreen[] TestingScreens
         {
@@ -289,9 +303,9 @@ namespace ScreenMgr.Editors
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             {
                 GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
-                //GUILayout.FlexibleSpace();
-                searchString = GUILayout.TextField(searchString, GUI.skin.FindStyle("ToolbarSeachTextField")/*, GUILayout.MaxWidth(300)*/);
-                if (GUILayout.Button("", GUI.skin.FindStyle("ToolbarSeachCancelButton")))
+                
+                searchString = GUILayout.TextField(searchString, toolbarSearchTextFieldStyle);
+                if (GUILayout.Button("", toolbarSearchCancelButtonStyle))
                 {
                     // Remove focus if cleared
                     searchString = "";
